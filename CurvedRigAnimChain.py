@@ -83,13 +83,17 @@ def make_window():
     # *****************************************************************************************************************
         make_window.ui_chain_frame = cmds.frameLayout(l="Make Chains", w=500, cll=True, cl=True)
         make_window.ui_chain_layout = cmds.columnLayout()
-        make_window.btn_make_chain_from_selected_obj = cmds.button(l="Make Chain", c="FinalStep()", en=False)
         cmds.text("now if you are done, select your desired object and click next")
+        cmds.rowLayout(numberOfColumns=3)
+        make_window.btn_make_chain_from_selected_obj = cmds.button(l="Make Chain", c="FinalStep()", en=False)
         make_window.btn_make_chain = cmds.button(l="MakeChain Only", c="MakeChain()", en=False)
+        make_window.cb_make_proxy = cmds.checkBox(l="Use Proxy Geo", cc="make_proxy_geo()", en=False)
+        cmds.setParent(make_window.ui_chain_layout)
         cmds.setParent(master_layout)
-        cmds.showWindow()
 
     # *****************************************************************************************************************
+
+        cmds.showWindow()
     else:
         cmds.confirmDialog(title='Error', message='You need to create a curve first.', icon='critical')
 
@@ -149,8 +153,12 @@ def make_chain_section():
     # Expand toggles
     cmds.frameLayout(make_window.ui_controller_frame, e=True, cl=True)
     cmds.frameLayout(make_window.ui_chain_frame, e=True, cl=False)
+    cmds.intSliderGrp(make_window.RedoCTRL, e=True, en=False)
+    cmds.button(make_window.btn_to_final_step, e=True, en=False)
     cmds.button(make_window.btn_make_chain_from_selected_obj, e=True, en=True)
     cmds.button(make_window.btn_make_chain, e=True, en=True)
+    cmds.checkBox(make_window.cb_make_proxy, e=True, en=True)
+
 
 
 def SmoothChange():
@@ -251,3 +259,18 @@ def MakeChain():
         cmds.setAttr(chainLinks[i] + ".rx", 90)
     # cmds.snapshot(n="TreadSS",i=1,ch=False,st=1,et=ChainCount,u="animCurve")
     cmds.DeleteMotionPaths()
+
+def make_proxy_geo():
+    proxy_geo = cmds.polyTorus(n="ProxyGeo", sa=10, sh=10, sr=0.3)
+    edges_to_scale = []
+    edges_template = ["pTorus1.e[109]", "pTorus1.e[119]", "pTorus1.e[129]", "pTorus1.e[139]", "pTorus1.e[149]", "pTorus1.e[159]", "pTorus1.e[169]", "pTorus1.e[179]", "pTorus1.e[189]", "pTorus1.e[199]",
+                      "pTorus1.e[104]", "pTorus1.e[114]", "pTorus1.e[124]", "pTorus1.e[134]", "pTorus1.e[144]", "pTorus1.e[154]", "pTorus1.e[164]", "pTorus1.e[174]", "pTorus1.e[184]", "pTorus1.e[194]"]
+    for edge in edges_template:
+        suffix_name = edge.split(".")[-1]
+        new_edge_name = "ProxyGeo." + str(suffix_name)
+        edges_to_scale.append(new_edge_name)
+
+    cmds.select(cl=True)
+    cmds.select(edges_to_scale)
+    cmds.scale(0.828, 1, 1,)
+    cmds.select(proxy_geo)
