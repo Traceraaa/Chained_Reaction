@@ -1,136 +1,253 @@
 import maya.cmds as cmds
 import time
 
+# Global Variables
 global isFirstTime
 global ChainCount
-isFirstTime=True
-ChainCount=22   
-#let's create a windo and UI
-winName="Rebuilder"
-if cmds.window(winName,q=True,ex=True):
-    cmds.deleteUI(winName)
 
-cmds.window(winName,t="CurveRigegr",w=500,h=400,s=False)
-cmds.columnLayout()
-cmds.text("before anything, ensure you have a curve selected")
-cmds.text("to restructure the curve use this slider")
-SpanCount=cmds.intSliderGrp(min=3,max=100,v=3,cc="SpanMod()",f=True)
-cmds.separator(w=500)
-cmds.text("now if you want to smooth it, use this slider to smooth")
-SmoothNess=cmds.floatSliderGrp(min=0,max=10,v=0,cc="SmoothChange()",f=True,en=False)
-cmds.separator(w=500)
-cmds.button(l="Next Step",c="NextStep()")
-cmds.separator(w=500)
-cmds.text("now if you are done with the curve, use this button to create controllers")
-cmds.button(l="CTRL maker",c="CMaker()")
-RedoCTRL=cmds.intSliderGrp(min=3,max=100,v=3,cc="CTRLRedo()",f=True,en=False)
-cmds.separator(w=500)
-cmds.text("now if you are done, select your desired object and click next")
-cmds.button(l="!!NEXT!!",c="FinalStep()")
-cmds.button(l="MakeChain Only",c="MakeChain()")
-cmds.showWindow()
+isFirstTime = True
+ChainCount = 22
 
-#start of the functions
+
+def find_object_in_scene():
+    all_curves = cmds.ls(type="nurbsCurve")
+    all_transform_node = []
+    number_of_curves = 0
+    for curve_shape in all_curves:
+        transform_node = cmds.listRelatives(curve_shape, parent=True, fullPath=True)[0]
+        transform_node = transform_node.split("|")[-1]
+        all_transform_node.append(transform_node)
+    number_of_curves = len(all_transform_node)
+    return all_transform_node, number_of_curves
+def enable_reconstruct():
+    cmds.intSliderGrp(make_window.SpanCount, e=True, en=True)
+
+
+def make_window():
+    # let's create a windo and UI
+    winName = "Rebuilder"
+    if cmds.window(winName, q=True, ex=True):
+        cmds.deleteUI(winName)
+
+    cmds.window(winName, t="CurveRiggr", w=500, h=450, s=False)
+
+    cmds.columnLayout(margins=5)
+    master_layout = cmds.columnLayout(mar=5)
+    cmds.rowColumnLayout(numberOfColumns=1)
+    cmds.text("Curve Rigger Tool", font="boldLabelFont")
+    cmds.separator(w=500, h=10)
+    cmds.setParent(master_layout)
+    # *****************************************************************************************************************
+    make_window.ui_curve_frame = cmds.frameLayout(l="Curve Settings", w=500, cll=True, cl=False)
+    make_window.ui_curve_layout = cmds.columnLayout()
+    cmds.text("Before anything, ensure you have a curve selected to restructure the curve use this slider")
+    cmds.setParent(make_window.ui_curve_layout)
+    scroll_layout = cmds.rowLayout(numberOfColumns=2)
+    text_scroll_layout = cmds.scrollLayout(w=250, h=50, hst=0, vst=16)
+
+    if find_object_in_scene()[0]:
+        make_window.curve_scroll_list = cmds.textScrollList(parent=text_scroll_layout,
+                                                            numberOfRows=find_object_in_scene()[1],
+                                                            allowMultiSelection=True,
+                                                            append=find_object_in_scene()[0],
+                                                            sc="enable_reconstruct()"
+                                                            )
+        cmds.setParent(scroll_layout)
+        cmds.iconTextButton(style='iconAndTextVertical', image1='refresh.xpm', label='refresh', al="right")
+        cmds.setParent(scroll_layout)
+
+        cmds.setParent(make_window.ui_curve_layout)
+        cmds.rowLayout(numberOfColumns=2)
+        make_window.SpanCount = cmds.intSliderGrp(min=3, max=100, v=3, cc="SpanMod()", f=True, en=False)
+        make_window.cb_use_smooth = cmds.checkBox(l="Adjust Smoothness", cc="NextStep()", en=False)
+        cmds.setParent(make_window.ui_curve_layout)
+        cmds.separator(w=500)
+        cmds.text("now if you want to smooth it, use this slider to smooth")
+        make_window.SmoothNess = cmds.floatSliderGrp(min=0, max=10, v=0, cc="SmoothChange()", f=True, en=False)
+        make_window.btn_next_to_make_controllers = cmds.button(l="Next", c="expand_controller_section()", en=False)
+        cmds.separator(w=500)
+        cmds.setParent(master_layout)
+
+    # *****************************************************************************************************************
+        make_window.ui_controller_frame = cmds.frameLayout(l="Make Controllers", w=500, cll=True, cl=True)
+        make_window.ui_controller_layout = cmds.columnLayout()
+        cmds.text("now if you are done with the curve, use this button to create controllers")
+        make_window.RedoCTRL = cmds.intSliderGrp(min=3, max=100, v=3, cc="CTRLRedo()", f=True, en=False)
+        cmds.rowLayout(numberOfColumns=2)
+        make_window.btn_cmaker = cmds.button(l="CTRL maker", c="CMaker()", en=False)
+        make_window.btn_to_final_step = cmds.button(l="Next", c="make_chain_section()", en=False)
+        cmds.setParent(make_window.ui_controller_layout)
+        cmds.separator(w=500)
+        cmds.setParent(master_layout)
+
+    # *****************************************************************************************************************
+        make_window.ui_chain_frame = cmds.frameLayout(l="Make Chains", w=500, cll=True, cl=True)
+        make_window.ui_chain_layout = cmds.columnLayout()
+        make_window.btn_make_chain_from_selected_obj = cmds.button(l="Make Chain", c="FinalStep()", en=False)
+        cmds.text("now if you are done, select your desired object and click next")
+        make_window.btn_make_chain = cmds.button(l="MakeChain Only", c="MakeChain()", en=False)
+        cmds.setParent(master_layout)
+        cmds.showWindow()
+
+    # *****************************************************************************************************************
+    else:
+        cmds.confirmDialog(title='Error', message='You need to create a curve first.', icon='critical')
+
+
+
+confirm = cmds.confirmDialog(t="Warning",
+                             m="Ensure your curve is created and selected before moving on",
+                             b=['Yes', 'No'],
+                             cb='No'
+                             )
+if confirm == "No":
+    cmds.confirmDialog(m="Check if you have curve created and selected before moving on")
+else:
+    make_window()
+
+
+# start of the functions
 def SpanMod():
     global isFirstTime
+
     if not isFirstTime:
         cmds.undo()
-    spanValue=cmds.intSliderGrp(SpanCount,q=True,v=True)
-    selectedCurve=cmds.ls(sl=True)
-    cmds.rebuildCurve(selectedCurve,rpo=True,kep=True,rt=0,s=spanValue)
+
+    cmds.checkBox(make_window.cb_use_smooth, e=True, en=True)
+    spanValue = cmds.intSliderGrp(make_window.SpanCount, q=True, v=True)
+    selected_curve_name = cmds.textScrollList(make_window.curve_scroll_list, q=True, si=True)
+
+    selectedCurve = cmds.ls(selected_curve_name, sl=True)
+    cmds.rebuildCurve(selectedCurve, rpo=True, kep=True, rt=0, s=spanValue)
     cmds.select(selectedCurve)
-    isFirstTime=False
+    isFirstTime = False
+
 
 def NextStep():
     global isFirstTime
-    isFirstTime=True
-    cmds.intSliderGrp(SpanCount,e=True,en=False)
-    cmds.floatSliderGrp(SmoothNess,e=True,en=True)
-    
+    isFirstTime = True
+
+    cmds.intSliderGrp(make_window.SpanCount, e=True, en=False)
+    cmds.floatSliderGrp(make_window.SmoothNess, e=True, en=True)
+    cmds.button(make_window.btn_next_to_make_controllers, e=True, en=False)
+
+
+def expand_controller_section():
+    # Expand toggles
+    cmds.frameLayout(make_window.ui_curve_frame, e=True, cl=True)
+    cmds.frameLayout(make_window.ui_controller_frame, e=True, cl=False)
+    # Button enable/disable
+    cmds.button(make_window.btn_next_to_make_controllers, e=True, en=False)
+    cmds.button(make_window.btn_cmaker, e=True, en=True)
+    # Checkbox disabled
+    cmds.checkBox(make_window.cb_use_smooth, e=True, en=False)
+    # sliders disabled
+    cmds.floatSliderGrp(make_window.SmoothNess, e=True, en=False)
+    cmds.intSliderGrp(make_window.RedoCTRL, e=True, en=False)
+
+def make_chain_section():
+    # Expand toggles
+    cmds.frameLayout(make_window.ui_controller_frame, e=True, cl=True)
+    cmds.frameLayout(make_window.ui_chain_frame, e=True, cl=False)
+    cmds.button(make_window.btn_make_chain_from_selected_obj, e=True, en=True)
+    cmds.button(make_window.btn_make_chain, e=True, en=True)
+
+
 def SmoothChange():
     global isFirstTime
     if not isFirstTime:
         cmds.undo()
-    newSmooth=cmds.floatSliderGrp(SmoothNess,q=True,v=True)
-    selectedCurve=cmds.ls(sl=True)
-    cmds.smoothCurve(selectedCurve[0]+".cv[*]",s=newSmooth)
+
+    cmds.button(make_window.btn_next_to_make_controllers, e=True, en=True)
+    selected_curve_name = cmds.textScrollList(make_window.curve_scroll_list, q=True, si=True)
+    newSmooth = cmds.floatSliderGrp(make_window.SmoothNess, q=True, v=True)
+    selectedCurve = cmds.ls(selected_curve_name, sl=True)
+    cmds.smoothCurve(selectedCurve[0] + ".cv[*]", s=newSmooth)
     cmds.select(selectedCurve)
-    isFirstTime=False
+    isFirstTime = False
+
 
 def CMaker():
-    selectedCRV=cmds.ls(sl=True)
-    EPlist=cmds.ls(selectedCRV[0]+".ep[*]",fl=True)
-    locList=[]
-    #now with having those two lists we can create locators and dump them on each point in order
+
+    cmds.floatSliderGrp(make_window.SmoothNess, e=True, en=False)
+    cmds.intSliderGrp(make_window.RedoCTRL, e=True, en=False)
+
+    selectedCRV = cmds.ls(sl=True)
+    EPlist = cmds.ls(selectedCRV[0] + ".ep[*]", fl=True)
+    locList = []
+    # now with having those two lists we can create locators and dump them on each point in order
     for EPi in EPlist:
-        cmds.select(EPi,r=True)
+        cmds.select(EPi, r=True)
         cmds.pointCurveConstraint()
         cmds.CenterPivot()
         locList.append(cmds.rename("EPCTRL1"))
     cmds.select(locList)
     cmds.group(n="AllLocators")
     cmds.select(selectedCRV)
-    cmds.intSliderGrp(RedoCTRL,e=True,en=True)
-    
-def CTRLRedo():
+    cmds.intSliderGrp(make_window.RedoCTRL, e=True, en=True)
+    cmds.button(make_window.btn_cmaker, e=True, en=False)
 
+
+def CTRLRedo():
+    cmds.button(make_window.btn_to_final_step, e=True, en=True)
     cmds.delete("AllLocators")
-    newRespan=cmds.intSliderGrp(RedoCTRL,q=True,v=True)
-    selectedcurve=cmds.ls(sl=True)
-    cmds.rebuildCurve(selectedcurve,rpo=True,kep=True,rt=0,s=newRespan)
+    newRespan = cmds.intSliderGrp(make_window.RedoCTRL, q=True, v=True)
+    selectedcurve = cmds.ls(sl=True)
+    cmds.rebuildCurve(selectedcurve, rpo=True, kep=True, rt=0, s=newRespan)
     cmds.select(selectedcurve)
     CMaker()
 
+
 def FinalStep():
-    startTime=1
-    AnimCTList=cmds.ls("EPCTRL*",tr=True)
-    endTime=len(AnimCTList)
-    selectedOBJ=cmds.ls(sl=True)
-    for CurKey in range(startTime,endTime+1):
-        myTime=cmds.currentTime(query=True)
-        cmds.select(selectedOBJ,r=True)
+
+    cmds.button(make_window.btn_make_chain, e=True, en=True)
+    cmds.button(make_window.btn_cmaker, e=True, en=False)
+    cmds.intSliderGrp(make_window.RedoCTRL, e=True, en=False)
+
+    startTime = 1
+    AnimCTList = cmds.ls("EPCTRL*", tr=True)
+    endTime = len(AnimCTList)
+    selectedOBJ = cmds.ls(sl=True)
+    for CurKey in range(startTime, endTime + 1):
+        myTime = cmds.currentTime(query=True)
+        cmds.select(selectedOBJ, r=True)
         cmds.FreezeTransformations()
         cmds.duplicate()
-        cmds.select(AnimCTList[CurKey-1],add=True)
+        cmds.select(AnimCTList[CurKey - 1], add=True)
         cmds.matchTransform()
         cmds.parentConstraint(w=1.0)
-        cmds.currentTime(myTime+1,e=True)
+        cmds.currentTime(myTime + 1, e=True)
         cmds.playbackOptions(by=1)
     cmds.currentTime(startTime)
-    
+
 
 def MakeChain():
     global ChainCount
-    selectedOBJ=cmds.ls(sl=True)
-    cmds.select(selectedOBJ,r=True)
-    cmds.select("curve1",add=True)
-    cmds.pathAnimation(fm=True,f=True,fa="x",ua="y",wut="vector",wu=(0,1,0),inverseFront=False,iu=False,b=False,stu=1,etu=ChainCount)
-    cmds.select(selectedOBJ,r=True)
-    cmds.selectKey('motionPath1_uValue',time=(1,ChainCount))
-    cmds.keyTangent(itt="linear",ott="linear")
-    chainLinks=[]
-    for curkey in range(1,ChainCount+1):
+    selectedOBJ = cmds.ls(sl=True)
+    cmds.select(selectedOBJ, r=True)
+    cmds.select("curve1", add=True)
+    cmds.pathAnimation(fm=True, f=True, fa="x", ua="y", wut="vector", wu=(0, 1, 0), inverseFront=False, iu=False,
+                       b=False, stu=1, etu=ChainCount)
+    cmds.select(selectedOBJ, r=True)
+    cmds.selectKey('motionPath1_uValue', time=(1, ChainCount))
+    cmds.keyTangent(itt="linear", ott="linear")
+    chainLinks = []
+    for curkey in range(1, ChainCount + 1):
         cmds.currentTime(curkey)
-        #time.sleep(.5)
-        cmds.select(selectedOBJ,r=True)
+        # time.sleep(.5)
+        cmds.select(selectedOBJ, r=True)
         cmds.duplicate()
-        #time.sleep(.5)
+        # time.sleep(.5)
         chainLinks.append(cmds.rename("CLink1"))
-        #cmds.rotate(0,90,0)
+        # cmds.rotate(0,90,0)
     cmds.select(chainLinks)
     cmds.group(n="AllLinks")
-    linksCount=len(chainLinks)
-    for i in range(1,linksCount,2):
+    linksCount = len(chainLinks)
+    for i in range(1, linksCount, 2):
         cmds.currentTime(i)
         time.sleep(.2)
         cmds.select(chainLinks[i])
         time.sleep(.2)
-        cmds.setAttr(chainLinks[i]+".rx",90)
-    #cmds.snapshot(n="TreadSS",i=1,ch=False,st=1,et=ChainCount,u="animCurve")
+        cmds.setAttr(chainLinks[i] + ".rx", 90)
+    # cmds.snapshot(n="TreadSS",i=1,ch=False,st=1,et=ChainCount,u="animCurve")
     cmds.DeleteMotionPaths()
-
-
-
-
-
-
