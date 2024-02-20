@@ -53,7 +53,12 @@ def make_window():
                                                             sc="enable_reconstruct()"
                                                             )
         cmds.setParent(scroll_layout)
-        cmds.iconTextButton(style='iconAndTextVertical', image1='refresh.xpm', label='refresh', al="right")
+        make_window.btn_refresh = cmds.iconTextButton(style='iconAndTextVertical',
+                                                      image1='refresh.xpm',
+                                                      label='refresh',
+                                                      al="right",
+                                                      c="refresh_list()"
+                                                      )
         cmds.setParent(scroll_layout)
 
         cmds.setParent(make_window.ui_curve_layout)
@@ -274,3 +279,6 @@ def make_proxy_geo():
     cmds.select(edges_to_scale)
     cmds.scale(0.828, 1, 1,)
     cmds.select(proxy_geo)
+
+def refresh_list():
+    make_window()
