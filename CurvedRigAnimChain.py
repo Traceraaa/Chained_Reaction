@@ -64,7 +64,7 @@ def make_window():
         cmds.setParent(make_window.ui_curve_layout)
         cmds.rowLayout(numberOfColumns=2)
         make_window.SpanCount = cmds.intSliderGrp(min=3, max=100, v=3, cc="SpanMod()", f=True, en=False)
-        make_window.cb_use_smooth = cmds.checkBox(l="Adjust Smoothness", cc="NextStep()", en=False)
+        make_window.cb_use_smooth = cmds.checkBox(l="Adjust Smoothness", onc="NextStep()", ofc="PrevisouStep()", en=False)
         cmds.setParent(make_window.ui_curve_layout)
         cmds.separator(w=500)
         cmds.text("now if you want to smooth it, use this slider to smooth")
@@ -121,7 +121,7 @@ def SpanMod():
 
     if not isFirstTime:
         cmds.undo()
-
+    cmds.button(make_window.btn_next_to_make_controllers, e=True, en=True)
     cmds.checkBox(make_window.cb_use_smooth, e=True, en=True)
     spanValue = cmds.intSliderGrp(make_window.SpanCount, q=True, v=True)
     selected_curve_name = cmds.textScrollList(make_window.curve_scroll_list, q=True, si=True)
@@ -139,6 +139,11 @@ def NextStep():
     cmds.intSliderGrp(make_window.SpanCount, e=True, en=False)
     cmds.floatSliderGrp(make_window.SmoothNess, e=True, en=True)
     cmds.button(make_window.btn_next_to_make_controllers, e=True, en=False)
+
+
+def PrevisouStep():
+    cmds.floatSliderGrp(make_window.SmoothNess, e=True, en=False)
+    cmds.intSliderGrp(make_window.SpanCount, e=True, en=True)
 
 
 def expand_controller_section():
