@@ -56,7 +56,7 @@ def make_window():
                                                             numberOfRows=find_object_in_scene()[1],
                                                             allowMultiSelection=True,
                                                             append=find_object_in_scene()[0],
-                                                            sc="enable_reconstruct()",
+                                                            sc="enable_reconstruct()"
                                                             )
         cmds.setParent(scroll_layout)
         make_window.btn_refresh = cmds.iconTextButton(style='iconAndTextVertical',
@@ -131,6 +131,8 @@ make_window()
 def curvetype():
     global curve_type
     cmds.intSliderGrp(make_window.SpanCount, e=True, en=True)
+    cmds.floatSliderGrp(make_window.SmoothNess, e=True, en=False)
+    cmds.checkBox(make_window.cb_use_smooth, e=True, v=False )
     curve_type = cmds.radioButtonGrp(make_window.curvetype, q=True, sl=True)
     print(curve_type)
 
