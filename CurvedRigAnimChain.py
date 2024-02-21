@@ -116,14 +116,6 @@ def make_window():
         cmds.confirmDialog(title='Error', message='You need to create a curve first.', icon='critical')
 
 
-# confirm = cmds.confirmDialog(t="Warning",
-#                              m="Ensure your curve is created and selected before moving on",
-#                              b=['Yes', 'No'],
-#                              cb='No'
-#                              )
-# if confirm == "No":
-#     cmds.confirmDialog(m="Check if you have curve created and selected before moving on")
-# else:
 make_window()
 
 
@@ -215,11 +207,14 @@ def SmoothChange():
 
 
 def CMaker():
+    global ChainCount
+
     cmds.floatSliderGrp(make_window.SmoothNess, e=True, en=False)
     cmds.intSliderGrp(make_window.RedoCTRL, e=True, en=False)
 
     selectedCRV = cmds.ls(sl=True)
     EPlist = cmds.ls(selectedCRV[0] + ".ep[*]", fl=True)
+    ChainCount = len(EPlist)
     locList = []
     # now with having those two lists we can create locators and dump them on each point in order
     for EPi in EPlist:
@@ -326,13 +321,19 @@ def MakeChain():
     cmds.pathAnimation(fm=True, f=True, fa="x", ua="y", wut="vector", wu=(0, 1, 0), inverseFront=False, iu=False,
                        b=False, stu=1, etu=ChainCount)
     cmds.select(selectedOBJ, r=True)
+
+    AnimCTList = cmds.ls("EPCTRL*", tr=True)
     cmds.selectKey('motionPath1_uValue', time=(1, ChainCount))
     cmds.keyTangent(itt="linear", ott="linear")
     chainLinks = []
+
     for curkey in range(1, ChainCount + 1):
         cmds.currentTime(curkey)
         cmds.select(selectedOBJ, r=True)
+        cmds.FreezeTransformations()
         cmds.duplicate()
+        cmds.select(AnimCTList[curkey - 1], add=True)
+        cmds.parentConstraint(w=1.0)
         chainLinks.append(cmds.rename("CLink1"))
     cmds.select(chainLinks)
 
@@ -340,11 +341,8 @@ def MakeChain():
     linksCount = len(chainLinks)
     for i in range(1, linksCount, 2):
         cmds.currentTime(i)
-        time.sleep(.2)
         cmds.select(chainLinks[i])
-        time.sleep(.2)
         cmds.setAttr(chainLinks[i] + ".rx", 90)
-    # cmds.snapshot(n="TreadSS",i=1,ch=False,st=1,et=ChainCount,u="animCurve")
     cmds.DeleteMotionPaths()
 
 
