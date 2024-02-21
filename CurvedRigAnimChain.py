@@ -6,11 +6,13 @@ global isFirstTime
 global ChainCount
 global selected_curve_name
 global curve_type
+global firstTimeMakeChain
 
 isFirstTime = True
 ChainCount = 22
 selected_curve_name = ""
 curve_type = 3
+firstTimeMakeChain = True
 
 
 def find_object_in_scene():
@@ -102,6 +104,7 @@ def make_window():
         make_window.ui_chain_frame = cmds.frameLayout(l="Make Chains", w=700, cll=True, cl=True)
         make_window.ui_chain_layout = cmds.columnLayout()
         cmds.text("now if you are done, select your desired object and click next")
+        make_window.slider_chain_count = cmds.intSliderGrp(min=3, max=1000, v=3, cc="MakeChain()", f=True, en=False)
         cmds.rowLayout(numberOfColumns=3)
         make_window.btn_make_chain_from_selected_obj = cmds.button(l="Make Chain", c="FinalStep()", en=False)
         make_window.btn_make_chain = cmds.button(l="MakeChain Only", c="MakeChain()", en=False)
@@ -116,14 +119,7 @@ def make_window():
         cmds.confirmDialog(title='Error', message='You need to create a curve first.', icon='critical')
 
 
-# confirm = cmds.confirmDialog(t="Warning",
-#                              m="Ensure your curve is created and selected before moving on",
-#                              b=['Yes', 'No'],
-#                              cb='No'
-#                              )
-# if confirm == "No":
-#     cmds.confirmDialog(m="Check if you have curve created and selected before moving on")
-# else:
+
 make_window()
 
 
@@ -194,6 +190,8 @@ def make_chain_section():
     cmds.frameLayout(make_window.ui_controller_frame, e=True, cl=True)
     cmds.frameLayout(make_window.ui_chain_frame, e=True, cl=False)
     cmds.intSliderGrp(make_window.RedoCTRL, e=True, en=False)
+    # Making chain count slider enable
+    cmds.intSliderGrp(make_window.slider_chain_count, e=True, en=True)
     cmds.button(make_window.btn_to_final_step, e=True, en=False)
     cmds.button(make_window.btn_make_chain_from_selected_obj, e=True, en=True)
     cmds.button(make_window.btn_make_chain, e=True, en=True)
@@ -272,9 +270,25 @@ def FinalStep():
 def MakeChain():
     global ChainCount
     global selected_curve_name
+    global firstTimeMakeChain
+
+    if not firstTimeMakeChain:
+        cmds.undo()
+        cmds.select(cl=True)
+
+    ChainCount = cmds.intSliderGrp(make_window.slider_chain_count, q=True, v=True)
+    use_proxy_geo = cmds.checkBox(make_window.cb_make_proxy, q=True, v=True)
 
     selected_curve_name = cmds.textScrollList(make_window.curve_scroll_list, q=True, si=True)
+    if use_proxy_geo:
+        selectedOBJ = make_proxy_geo()
+        _make_chain(selectedOBJ)
+
     selectedOBJ = cmds.ls(sl=True)
+    _make_chain(selectedOBJ)
+
+
+def _make_chain(selectedOBJ):
     cmds.select(selectedOBJ, r=True)
     cmds.select(selected_curve_name, add=True)
     cmds.pathAnimation(fm=True, f=True, fa="x", ua="y", wut="vector", wu=(0, 1, 0), inverseFront=False, iu=False,
@@ -294,12 +308,14 @@ def MakeChain():
     linksCount = len(chainLinks)
     for i in range(1, linksCount, 2):
         cmds.currentTime(i)
-        time.sleep(.2)
         cmds.select(chainLinks[i])
-        time.sleep(.2)
         cmds.setAttr(chainLinks[i] + ".rx", 90)
     # cmds.snapshot(n="TreadSS",i=1,ch=False,st=1,et=ChainCount,u="animCurve")
     cmds.DeleteMotionPaths()
+
+    # Making chain count slider disable
+    cmds.intSliderGrp(make_window.slider_chain_count, e=True, en=True)
+    firstTimeMakeChain = False
 
 
 def make_proxy_geo():
@@ -317,7 +333,7 @@ def make_proxy_geo():
     cmds.select(cl=True)
     cmds.select(edges_to_scale)
     cmds.scale(0.828, 1, 1, )
-    cmds.select(proxy_geo)
+    return cmds.select(proxy_geo)
 
 
 def refresh_list():
