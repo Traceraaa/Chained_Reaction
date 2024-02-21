@@ -245,6 +245,10 @@ def CTRLRedo():
 
 
 def FinalStep():
+
+    global ChainCount
+    global selected_curve_name
+
     cmds.button(make_window.btn_make_chain, e=True, en=True)
     cmds.button(make_window.btn_cmaker, e=True, en=False)
     cmds.intSliderGrp(make_window.RedoCTRL, e=True, en=False)
@@ -266,40 +270,83 @@ def FinalStep():
         cmds.parentConstraint(w=1.0)
         cmds.currentTime(myTime + 1, e=True)
         cmds.playbackOptions(by=1)
+        chainLinks.append(cmds.rename("CLink1"))
+    
+    cmds.select(chainLinks)
+    cmds.group(n="AllLinks")
     cmds.currentTime(startTime)
 
-
 def MakeChain():
+
     global ChainCount
     global selected_curve_name
 
-    selected_curve_name = cmds.textScrollList(make_window.curve_scroll_list, q=True, si=True)
-    selectedOBJ = cmds.ls(sl=True)
-    cmds.select(selectedOBJ, r=True)
-    cmds.select(selected_curve_name, add=True)
-    cmds.pathAnimation(fm=True, f=True, fa="x", ua="y", wut="vector", wu=(0, 1, 0), inverseFront=False, iu=False,
-                       b=False, stu=1, etu=ChainCount)
-    cmds.select(selectedOBJ, r=True)
-    cmds.selectKey('motionPath1_uValue', time=(1, ChainCount))
-    cmds.keyTangent(itt="linear", ott="linear")
-    chainLinks = []
-    for curkey in range(1, ChainCount + 1):
-        cmds.currentTime(curkey)
-        cmds.select(selectedOBJ, r=True)
-        cmds.duplicate()
-        chainLinks.append(cmds.rename("CLink1"))
-    cmds.select(chainLinks)
+    cmds.button(make_window.btn_make_chain, e=True, en=True)
+    cmds.button(make_window.btn_cmaker, e=True, en=False)
+    cmds.intSliderGrp(make_window.RedoCTRL, e=True, en=False)
 
+    startTime = 1
+    AnimCTList = cmds.ls("EPCTRL*", tr=True)
+    endTime = len(AnimCTList)
+
+    chainLinks = []
+
+    selectedOBJ = cmds.ls(sl=True)
+    for CurKey in range(startTime, endTime + 1):
+        myTime = cmds.currentTime(query=True)
+        cmds.select(selectedOBJ, r=True)
+        cmds.FreezeTransformations()
+        cmds.duplicate()
+        cmds.select(AnimCTList[CurKey - 1], add=True)
+        cmds.matchTransform()
+        cmds.parentConstraint(w=1.0)
+        cmds.currentTime(myTime + 1, e=True)
+        cmds.playbackOptions(by=1)
+        chainLinks.append(cmds.rename("CLink1"))
+    
+    cmds.select(chainLinks)
     cmds.group(n="AllLinks")
+    cmds.currentTime(startTime)
+
     linksCount = len(chainLinks)
     for i in range(1, linksCount, 2):
         cmds.currentTime(i)
-        time.sleep(.2)
         cmds.select(chainLinks[i])
-        time.sleep(.2)
         cmds.setAttr(chainLinks[i] + ".rx", 90)
-    # cmds.snapshot(n="TreadSS",i=1,ch=False,st=1,et=ChainCount,u="animCurve")
-    cmds.DeleteMotionPaths()
+
+
+
+# def MakeChain():
+#     global ChainCount
+#     global selected_curve_name
+
+#     selected_curve_name = cmds.textScrollList(make_window.curve_scroll_list, q=True, si=True)
+#     selectedOBJ = cmds.ls(sl=True)
+#     cmds.select(selectedOBJ, r=True)
+#     cmds.select(selected_curve_name, add=True)
+#     cmds.pathAnimation(fm=True, f=True, fa="x", ua="y", wut="vector", wu=(0, 1, 0), inverseFront=False, iu=False,
+#                        b=False, stu=1, etu=ChainCount)
+#     cmds.select(selectedOBJ, r=True)
+#     cmds.selectKey('motionPath1_uValue', time=(1, ChainCount))
+#     cmds.keyTangent(itt="linear", ott="linear")
+#     chainLinks = []
+#     for curkey in range(1, ChainCount + 1):
+#         cmds.currentTime(curkey)
+#         cmds.select(selectedOBJ, r=True)
+#         cmds.duplicate()
+#         chainLinks.append(cmds.rename("CLink1"))
+#     cmds.select(chainLinks)
+
+#     cmds.group(n="AllLinks")
+#     linksCount = len(chainLinks)
+#     for i in range(1, linksCount, 2):
+#         cmds.currentTime(i)
+#         time.sleep(.2)
+#         cmds.select(chainLinks[i])
+#         time.sleep(.2)
+#         cmds.setAttr(chainLinks[i] + ".rx", 90)
+#     # cmds.snapshot(n="TreadSS",i=1,ch=False,st=1,et=ChainCount,u="animCurve")
+#     cmds.DeleteMotionPaths()
 
 
 def make_proxy_geo():
