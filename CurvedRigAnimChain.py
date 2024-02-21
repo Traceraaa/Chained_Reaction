@@ -134,6 +134,8 @@ def curvetype():
     cmds.floatSliderGrp(make_window.SmoothNess, e=True, en=False)
     cmds.checkBox(make_window.cb_use_smooth, e=True, v=False )
     curve_type = cmds.radioButtonGrp(make_window.curvetype, q=True, sl=True)
+    if curve_type == 1:
+        cmds.confirmDialog(m="Linear curves can not be smoothened.")
     print(curve_type)
 
 
@@ -143,12 +145,17 @@ def SpanMod():
     global curve_type
     if curve_type == 4:
         curve_type = 5
+    if curve_type == 1:
+        cmds.checkBox(make_window.cb_use_smooth, e=True, en=False)
+    else:
+        cmds.checkBox(make_window.cb_use_smooth, e=True, en=True)
 
     if not isFirstTime:
         cmds.undo()
 
+    cmds.radioButtonGrp(make_window.curvetype, e=True, en=False)
     cmds.textScrollList(make_window.curve_scroll_list, e=True, en=False)
-    cmds.checkBox(make_window.cb_use_smooth, e=True, en=True)
+    cmds.button(make_window.btn_next_to_make_controllers, e=True, en=True)
     spanValue = cmds.intSliderGrp(make_window.SpanCount, q=True, v=True)
     selected_curve_name = cmds.textScrollList(make_window.curve_scroll_list, q=True, si=True)
 
@@ -165,7 +172,7 @@ def NextStep():
 
     cmds.intSliderGrp(make_window.SpanCount, e=True, en=False)
     cmds.floatSliderGrp(make_window.SmoothNess, e=True, en=True)
-    cmds.button(make_window.btn_next_to_make_controllers, e=True, en=False)
+    
 
 
 def expand_controller_section():
@@ -245,6 +252,9 @@ def FinalStep():
     startTime = 1
     AnimCTList = cmds.ls("EPCTRL*", tr=True)
     endTime = len(AnimCTList)
+
+    chainLinks = []
+
     selectedOBJ = cmds.ls(sl=True)
     for CurKey in range(startTime, endTime + 1):
         myTime = cmds.currentTime(query=True)
@@ -275,13 +285,11 @@ def MakeChain():
     chainLinks = []
     for curkey in range(1, ChainCount + 1):
         cmds.currentTime(curkey)
-        # time.sleep(.5)
         cmds.select(selectedOBJ, r=True)
         cmds.duplicate()
-        # time.sleep(.5)
         chainLinks.append(cmds.rename("CLink1"))
-        # cmds.rotate(0,90,0)
     cmds.select(chainLinks)
+
     cmds.group(n="AllLinks")
     linksCount = len(chainLinks)
     for i in range(1, linksCount, 2):
